@@ -1,0 +1,14 @@
+export EPOVSN=4.0.3
+export MYDIR=$PWD/
+export EPO=${MYDIR}epos${EPOVSN}/
+export BUILD_DIR=${MYDIR}epos-build
+export BIN_DIR=${EPO}
+export JIN=/media/Students/aliu/
+export OPT=./
+export HTO=${JIN}epos1/
+export CHK=${JIN}epos1/
+export HepMC3_DIR=/home/aliu/hepmc3-install/share/HepMC3/cmake
+export FASTJETSYS=`/home/aliu/fastjet-install/bin/fastjet-config --prefix`
+export FASTJET_DIR=${FASTJETSYS}
+export PATH=$PATH:$FASTSYS/bin
+export LD_LIBRARY_PATH=$ROOTSYS/lib:$ROOTSYS/lib/root:/usr/local/lib:/home/aliu/hepmc3-install/lib:/home/aliu/fastjet-install/lib:$LD_LIBRARY_PATH

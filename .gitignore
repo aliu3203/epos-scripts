@@ -1,0 +1,9 @@
+# ACLiC build artifacts (.C+ compiles next to the macro)
+*_C.so
+*_C.d
+*_ACLiC_dict_rdict.pcm
+*.pcm
+# outputs belong with the data, not here
+*.root
+*.log
+*.png
