@@ -1,11 +1,11 @@
 // ESS.C -- pass 2 of the event-shape-selection analysis (Xu et al., arXiv:2307.14997), ported from the authors'
 // macro Parity_EPD_pbp.C to EPOS. Each event is classified by three event-shape variables:
 //
-//   single q2^2 = |Sum_i e^{2i phi_i}|^2   / [N     (1 + N     v2{2}^2)]       Eq. (9)
-//   pair   q2^2 = |Sum_p e^{2i phi_p}|^2   / [Npair (1 + Npair v2pair{2}^2)]   Eq. (11), phi_p = azimuth of p_a+p_b
-//   q2,B        = sqrt(Eq. 9 for the 1<|y|<2 particles, with their own v2B{2})   App. A
+//   single q2^2 = |Sum_i e^{2i phi_i}|^2   / [N     (1 + N     v2^2)]       Eq. (9)
+//   pair   q2^2 = |Sum_p e^{2i phi_p}|^2   / [Npair (1 + Npair v2pair^2)]   Eq. (11), phi_p = azimuth of p_a+p_b
+//   q2,B        = sqrt(Eq. 9 for the 1<|y|<2 particles, with their own v2B)   App. A
 //
-// with the constants from pass 1 (V2Const.C, hadd-ed into constFile). In bins of each variable we record
+// with the ensemble v2 w.r.t. the true reaction plane from pass 1 (V2Const.C, hadd-ed into constFile). In bins of each variable we record
 //
 //   1 single v2  <cos(2phi - 2Psi)>            per POI          5 gamma112 OS  <cos(phi_a+phi_b-2Psi)>  per OS pair
 //   2 pair v2    <cos(2phi_p - 2Psi)>          per pair (all)   6 gamma112 SS                         per SS pair
@@ -29,26 +29,29 @@ void ESS(int job = 0, const char* filepat = "z-auau_run_*.root", const char* con
     double v2sq[3];
     {
         TFile fc(constFile);
-        TProfile* p = (TProfile*)fc.Get("pV2sq");
-        if(!p){ printf("cannot read pV2sq from %s\n", constFile); return; }
-        for(int k = 0; k < 3; k++) v2sq[k] = p->GetBinContent(k+1);
+        TProfile* p = (TProfile*)fc.Get("pV2");
+        if(!p){ printf("cannot read pV2 from %s\n", constFile); return; }
+        for(int k = 0; k < 3; k++) v2sq[k] = p->GetBinContent(k+1)*p->GetBinContent(k+1);
     }
-    printf("constants: v2{2} = %.5f, v2pair{2} = %.5f, v2B{2} = %.5f\n", sqrt(v2sq[0]), sqrt(v2sq[1]), sqrt(v2sq[2]));
+    printf("constants: v2{RP} = %.5f, v2pair{RP} = %.5f, v2B{RP} = %.5f\n", sqrt(v2sq[0]), sqrt(v2sq[1]), sqrt(v2sq[2]));
 
     TChain* ch = ess::MakeChain(filepat);
     TFile fout(Form("cen5.ESS_job%d.root", job), "RECREATE");
 
-    // index 0 = single q2^2, 1 = pair q2^2, 2 = q2,B ; 0.1-wide bins as in the reference, first 50
+    // index 0 = single q2^2, 1 = pair q2^2, 2 = q2,B ; 50 bins each. Single q2^2 and q2,B average ~1: 0.1-wide bins as in
+    // the reference. Pair q2^2 with v2pair{RP} averages ~5.6 (1 + Npair v2pair^2 grows only like Npair v2pair^2 < |Q|^2/Npair,
+    // which also contains pairs sharing a pion), so its bins are 0.5 wide to keep the events.
+    const double qmax[3] = {5, 25, 5};
     const char* tag[3]   = {"q2s", "q2p", "q2B"};
     const char* title[3] = {"single q_{2}^{2}", "pair q_{2}^{2}", "q_{2,B}"};
     TProfile2D* pESS[3]; TH1D* hq[3];
     for(int k = 0; k < 3; k++){
         pESS[k] = new TProfile2D(Form("pESS_%s", tag[k]), Form("observables vs %s;observable;%s", title[k], title[k]),
-                                 8, 0.5, 8.5, 50, 0, 5);
+                                 8, 0.5, 8.5, 50, 0, qmax[k]);
         pESS[k]->Sumw2();                                                // weighted fills
-        hq[k]  = new TH1D(Form("h%s", tag[k]), Form("events vs %s;%s", title[k], title[k]), 50, 0, 5);
+        hq[k]  = new TH1D(Form("h%s", tag[k]), Form("events vs %s;%s", title[k], title[k]), 50, 0, qmax[k]);
     }
-    TH1D* hConst = new TH1D("hConst", "constants used: v2{2}, v2pair{2}, v2B{2}", 3, 0.5, 3.5);
+    TH1D* hConst = new TH1D("hConst", "constants used: v2{RP}, v2pair{RP}, v2B{RP}", 3, 0.5, 3.5);
     for(int k = 0; k < 3; k++) hConst->SetBinContent(k+1, sqrt(v2sq[k]));
 
     ess::Event ev;

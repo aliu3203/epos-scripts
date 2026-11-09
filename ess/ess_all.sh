@@ -1,7 +1,7 @@
 #!/bin/bash
 # ess_all.sh -- event-shape-selection analysis (arXiv:2307.14997) over the four Disk_Alpha EPOS days.
 #
-#   pass 1: V2Const.C on every chunk -> hadd -> $OUT/v2const.root   (v2{2}, v2pair{2}, v2B{2} for the q2 normalization)
+#   pass 1: V2Const.C on every chunk -> hadd -> $OUT/v2const.root   (v2{RP}, v2pair{RP}, v2B{RP} for the q2 normalization)
 #   pass 2: ESS.C on every chunk (reads v2const.root)              -> MakeFigure_ESS.C (combine, fits, figures, summary)
 #
 # Files are chained as in correlators/correlators_all.sh: each day is split into chunks of whole files (~50k events),
@@ -78,9 +78,14 @@ for day in $DAYS; do make_chunks $day; done
 # ---- pass 1: normalization constants ----
 pass V2Const 0
 hadd -f $OUT/v2const.root $OUT/*/chunks/c*/cen5.V2Const_job0.root > $OUT/hadd_v2const.log 2>&1
-rootb -e "TFile f(\"$OUT/v2const.root\"); TProfile* p=(TProfile*)f.Get(\"pV2sq\"); \
-          printf(\"v2{2} = %.5f  v2pair{2} = %.5f  v2B{2} = %.5f\n\", sqrt(p->GetBinContent(1)), sqrt(p->GetBinContent(2)), sqrt(p->GetBinContent(3)));" \
+rootb -e "TFile f(\"$OUT/v2const.root\"); TProfile* p=(TProfile*)f.Get(\"pV2\"); \
+          printf(\"v2{RP} = %.5f  v2pair{RP} = %.5f  v2B{RP} = %.5f\n\", p->GetBinContent(1), p->GetBinContent(2), p->GetBinContent(3));" \
     | tee $OUT/v2const.txt
+# constants changed (e.g. new days added) -> every chunk must be redone with them, not only the new ones
+if ! cmp -s $OUT/v2const.txt $OUT/v2const.used; then
+    rm -f $OUT/*/chunks/c*/.done.ESS
+    cp $OUT/v2const.txt $OUT/v2const.used
+fi
 
 # ---- pass 2: event-shape selection ----
 pass ESS "0,\"z-auau_run_*.root\",\"$OUT/v2const.root\""

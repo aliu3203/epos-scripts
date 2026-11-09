@@ -4,7 +4,8 @@
 //   POI          : pi+/- (EPOS id +-120), final state, 0.2 < pT < 2 GeV/c, |y| < 1           (paper Sec. III)
 //   q2,B particles: charged pi/K/p (EPOS ids +-120, +-130, +-1120), 0.2 < pT < 2, 1 < |y| < 2  (paper App. A)
 //   events       : 8.4 < b < 9.2 fm (30-40%), at least 2 pi+ and 2 pi- among the POI
-//   Psi_RP       : the "phi" branch (true reaction plane)
+//   Psi_RP       : the "phi" branch = angle of the impact parameter (true reaction plane; EPOS4 root-file structure doc).
+//                  Not psi2 (participant plane) or phir (event plane w.r.t. the impact parameter).
 #ifndef ESS_COMMON_H
 #define ESS_COMMON_H
 

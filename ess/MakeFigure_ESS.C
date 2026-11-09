@@ -155,8 +155,8 @@ void MakeFigure_ESS(const char* base = "/media/Students/aliu/ess_all", const cha
     v2incl = v[0];
     summary += Form("ESS (arXiv:2307.14997) on EPOS 30-40%% Au+Au 200 GeV: pi+-, 0.2<pT<2, |y|<1, true RP\n");
     summary += Form("%zu chunks, %.0f events\n", chunks.size(), tot.h[0]->Integral(0, 51));
-    summary += Form("normalization (pass 1): v2{2} = %.5f, v2pair{2} = %.5f, v2B{2} = %.5f\n", vconst[0], vconst[1], vconst[2]);
-    summary += Form("<single q2^2> = %.3f, <pair q2^2> = %.3f, <q2,B> = %.3f (within 0-5)\n\n",
+    summary += Form("normalization (pass 1): v2{RP} = %.5f, v2pair{RP} = %.5f, v2B{RP} = %.5f\n", vconst[0], vconst[1], vconst[2]);
+    summary += Form("<single q2^2> = %.3f, <pair q2^2> = %.3f, <q2,B> = %.3f (within histogram range)\n\n",
                     tot.h[0]->GetMean(), tot.h[1]->GetMean(), tot.h[2]->GetMean());
     summary += "inclusive (errors: chunk spread)\n";
     const char* qn[NQ] = {"single v2", "pair v2", "resonance v2", "Dgamma112", "2a1^2"};
