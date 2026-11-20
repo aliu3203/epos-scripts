@@ -15,7 +15,7 @@
 //                              ESS_fig5_9.png = Fig. 5 (resonance v2) and Fig. 9 (q2,B, linear and 2nd-order fits)
 // Table: <base>/ESS_summary.txt
 //
-// Usage: root -l -b -q 'MakeFigure_ESS.C+("/media/Students/aliu/ess_all","day1 day2 day3 day4")'
+// Usage: root -l -b -q 'MakeFigure_ESS.C+("/media/Students/aliu/ess_all","day1 day2 day3 day4","30-40%")'
 using namespace std;
 #include <cstdio>
 #include <string>
@@ -116,7 +116,8 @@ static void Panel(TVirtualPad* pad, int k, int xq, const char* label, bool pol2 
     }
 }
 
-void MakeFigure_ESS(const char* base = "/media/Students/aliu/ess_all", const char* names = "day1 day2 day3 day4"){
+void MakeFigure_ESS(const char* base = "/media/Students/aliu/ess_all", const char* names = "day1 day2 day3 day4",
+                    const char* cent = "30-40%"){
     gStyle->SetOptStat(0); gStyle->SetOptTitle(0);
     TH1::AddDirectory(false);
 
@@ -153,7 +154,7 @@ void MakeFigure_ESS(const char* base = "/media/Students/aliu/ess_all", const cha
     double v[NQ], e[NQ];
     ValErr(0, 0, 51, v, e);
     v2incl = v[0];
-    summary += Form("ESS (arXiv:2307.14997) on EPOS 30-40%% Au+Au 200 GeV: pi+-, 0.2<pT<2, |y|<1, true RP\n");
+    summary += Form("ESS (arXiv:2307.14997) on EPOS %s Au+Au 200 GeV: pi+-, 0.2<pT<2, |y|<1, true RP\n", cent);
     summary += Form("%zu chunks, %.0f events\n", chunks.size(), tot.h[0]->Integral(0, 51));
     summary += Form("normalization (pass 1): v2{RP} = %.5f, v2pair{RP} = %.5f, v2B{RP} = %.5f\n", vconst[0], vconst[1], vconst[2]);
     summary += Form("<single q2^2> = %.3f, <pair q2^2> = %.3f, <q2,B> = %.3f (within histogram range)\n\n",

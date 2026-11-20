@@ -15,7 +15,8 @@
 // Each event fills its per-event mean with weight = number of terms, so the bin content is the same per-pair /
 // per-particle average as the reference's per-term fills and GetBinEntries() is the number of terms.
 //
-// Usage (inside a chunk directory): root -l -b -q 'ESS.C+(0,"z-auau_run_*.root","/path/v2const.root")'
+// Usage (inside a chunk directory): root -l -b -q 'ESS.C+(0,"z-auau_run_*.root","/path/v2const.root",8.4,9.2)'
+// (bmin, bmax = impact-parameter window of the sample in fm; must match pass 1)
 #include <cstdio>
 #include "TFile.h"
 #include "TH1D.h"
@@ -23,7 +24,9 @@
 #include "TProfile2D.h"
 #include "ESS_common.h"
 
-void ESS(int job = 0, const char* filepat = "z-auau_run_*.root", const char* constFile = "v2const.root"){
+void ESS(int job = 0, const char* filepat = "z-auau_run_*.root", const char* constFile = "v2const.root",
+         double bmin = 8.4, double bmax = 9.2){
+    ess::bMin = bmin; ess::bMax = bmax;
 
     // ---- normalization constants from pass 1 ----
     double v2sq[3];

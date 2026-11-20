@@ -8,13 +8,15 @@
 // bin 3 = q2,B particles (M = N_B). Filled as a weighted TProfile, so hadd over chunks gives the global value.
 // (A pair cumulant v2pair{2} would be dominated by pairs of pairs sharing a pion -- not flow.)
 //
-// Usage (inside a chunk directory): root -l -b -q 'V2Const.C+(0)'  ->  cen5.V2Const_job0.root
+// Usage (inside a chunk directory): root -l -b -q 'V2Const.C+(0,"z-auau_run_*.root",8.4,9.2)'  ->  cen5.V2Const_job0.root
+// (bmin, bmax = impact-parameter window of the sample in fm)
 #include <cstdio>
 #include "TFile.h"
 #include "TProfile.h"
 #include "ESS_common.h"
 
-void V2Const(int job = 0, const char* filepat = "z-auau_run_*.root"){
+void V2Const(int job = 0, const char* filepat = "z-auau_run_*.root", double bmin = 8.4, double bmax = 9.2){
+    ess::bMin = bmin; ess::bMax = bmax;
     TChain* ch = ess::MakeChain(filepat);
     TFile fout(Form("cen5.V2Const_job%d.root", job), "RECREATE");
     TProfile* pV2 = new TProfile("pV2", "v_{2}{RP}: 1 single, 2 pair, 3 q_{2,B} particles", 3, 0.5, 3.5);
