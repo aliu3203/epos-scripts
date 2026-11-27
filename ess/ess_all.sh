@@ -16,6 +16,7 @@
 # Usage: mkdir -p /media/Students/aliu/ess_all && cd ~ && setsid nohup /media/Students/epos-scripts/ess/ess_all.sh \
 #            > /media/Students/aliu/ess_all/daemon.log 2>&1 < /dev/null &
 # 70-80%: OUT=/media/Students/aliu/ess_7080 SAMPLE=cen7080_200GeV DAYS=day1 BMIN=12.5 BMAX=13.4 CENT=70-80% (same command)
+# All samples on the disk, organized by energy and centrality: ess_samples.sh (runs this script once per sample).
 
 ANA=${ANA:-/media/Students/epos-scripts/ess}
 OUT=${OUT:-/media/Students/aliu/ess_all}
@@ -24,7 +25,8 @@ SAMPLE=${SAMPLE:-cen3040_200GeV}
 DAYS=${DAYS:-"day1 day2 day3 day4"}
 BMIN=${BMIN:-8.4}            # impact-parameter window of the sample (fm), as in its EPOS production
 BMAX=${BMAX:-9.2}
-CENT=${CENT:-30-40%}         # label for the summary
+CENT=${CENT:-30-40%}         # labels for the summary
+ENERGY=${ENERGY:-200 GeV}
 NPER=${NPER:-250}          # files per chunk (200 events each at 30-40%, 400 at 70-80%)
 NPAR=${NPAR:-3}
 BUILD=$OUT/build
@@ -35,7 +37,11 @@ rootb() { root -l -b -q -e "gSystem->SetBuildDir(\"$BUILD\",true)" "$@"; }
 # split day $1 into chunks of symlinks $OUT/$1/chunks/cNNN/z-auau_run_*.root (frozen after the first run)
 make_chunks() {
     local run=$OUT/$1 src=$SRC/${SAMPLE}_$1
-    [ -d $run/chunks ] && return
+    if [ -d $run/chunks ]; then
+        local nsrc=$(ls $src | grep -c '^auau_.*\.root$') nused=$(ls $run/chunks/*/ | grep -c '^z-auau_run_')
+        [ $nsrc -eq $nused ] || log "$1: WARNING $nsrc files in $src but $nused in its frozen chunks -- the others are not used"
+        return
+    fi
     local files=( $(cd $src && ls auau_*.root | sort -V) )
     local n=${#files[@]} K=$(( (${#files[@]} + NPER - 1) / NPER ))
     for ((c = 0; c < K; c++)); do
@@ -74,7 +80,7 @@ pass() {
 mkdir -p $OUT $BUILD
 exec 9> $OUT/.lock
 flock -n 9 || { log "another ess_all.sh is running on $OUT"; exit 1; }
-log "start: out=$OUT sample=$SAMPLE days=$DAYS b=$BMIN-$BMAX fm (ess at git $(git -C $ANA rev-parse --short HEAD 2>/dev/null))"
+log "start: out=$OUT sample=$SAMPLE days=$DAYS b=$BMIN-$BMAX fm (ess at git $(cat $ANA/COMMIT 2>/dev/null || git -C $ANA rev-parse --short HEAD 2>/dev/null))"
 
 for m in V2Const ESS MakeFigure_ESS; do
     rootb -e ".L $ANA/$m.C+" > $BUILD/$m.build.log 2>&1 || { log "build of $m failed, see $BUILD/$m.build.log"; exit 1; }
@@ -95,5 +101,5 @@ fi
 
 # ---- pass 2: event-shape selection ----
 pass ESS "0,\"z-auau_run_*.root\",\"$OUT/v2const.root\",$BMIN,$BMAX"
-rootb "$ANA/MakeFigure_ESS.C+(\"$OUT\",\"$DAYS\",\"$CENT\")" > $OUT/MakeFigure_ESS.log 2>&1
+rootb "$ANA/MakeFigure_ESS.C+(\"$OUT\",\"$DAYS\",\"$CENT\",\"$ENERGY\")" > $OUT/MakeFigure_ESS.log 2>&1
 log "done: $OUT/ESS_summary.txt, $OUT/ESS_fig6.png, $OUT/ESS_fig6_g132.png, $OUT/ESS_fig5_9.png"
