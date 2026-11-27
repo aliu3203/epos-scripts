@@ -1,5 +1,6 @@
 #!/bin/bash
-# ess_all.sh -- event-shape-selection analysis (arXiv:2307.14997) over the four Disk_Alpha EPOS days.
+# ess_all.sh -- event-shape-selection analysis (arXiv:2307.14997) over the Disk_Alpha EPOS days of one sample
+# ($SAMPLE: folders $SRC/${SAMPLE}_dayN, impact-parameter window $BMIN-$BMAX fm; default 30-40%).
 #
 #   pass 1: V2Const.C on every chunk -> hadd -> $OUT/v2const.root   (v2{2}, v2pair{2}, v2B{2} for the q2 normalization)
 #   pass 2: ESS.C on every chunk (reads v2const.root)              -> MakeFigure_ESS.C (combine, fits, figures, summary)
@@ -14,12 +15,17 @@
 #
 # Usage: mkdir -p /media/Students/aliu/ess_all && cd ~ && setsid nohup /media/Students/epos-scripts/ess/ess_all.sh \
 #            > /media/Students/aliu/ess_all/daemon.log 2>&1 < /dev/null &
+# 70-80%: OUT=/media/Students/aliu/ess_7080 SAMPLE=cen7080_200GeV DAYS=day1 BMIN=12.5 BMAX=13.4 CENT=70-80% (same command)
 
 ANA=${ANA:-/media/Students/epos-scripts/ess}
 OUT=${OUT:-/media/Students/aliu/ess_all}
 SRC=${SRC:-/media/Disk_Alpha/EPOS}
+SAMPLE=${SAMPLE:-cen3040_200GeV}
 DAYS=${DAYS:-"day1 day2 day3 day4"}
-NPER=${NPER:-250}          # files per chunk (200 events each)
+BMIN=${BMIN:-8.4}            # impact-parameter window of the sample (fm), as in its EPOS production
+BMAX=${BMAX:-9.2}
+CENT=${CENT:-30-40%}         # label for the summary
+NPER=${NPER:-250}          # files per chunk (200 events each at 30-40%, 400 at 70-80%)
 NPAR=${NPAR:-3}
 BUILD=$OUT/build
 
@@ -28,7 +34,7 @@ rootb() { root -l -b -q -e "gSystem->SetBuildDir(\"$BUILD\",true)" "$@"; }
 
 # split day $1 into chunks of symlinks $OUT/$1/chunks/cNNN/z-auau_run_*.root (frozen after the first run)
 make_chunks() {
-    local run=$OUT/$1 src=$SRC/cen3040_200GeV_$1
+    local run=$OUT/$1 src=$SRC/${SAMPLE}_$1
     [ -d $run/chunks ] && return
     local files=( $(cd $src && ls auau_*.root | sort -V) )
     local n=${#files[@]} K=$(( (${#files[@]} + NPER - 1) / NPER ))
@@ -68,7 +74,7 @@ pass() {
 mkdir -p $OUT $BUILD
 exec 9> $OUT/.lock
 flock -n 9 || { log "another ess_all.sh is running on $OUT"; exit 1; }
-log "start: out=$OUT days=$DAYS (ess at git $(git -C $ANA rev-parse --short HEAD 2>/dev/null))"
+log "start: out=$OUT sample=$SAMPLE days=$DAYS b=$BMIN-$BMAX fm (ess at git $(git -C $ANA rev-parse --short HEAD 2>/dev/null))"
 
 for m in V2Const ESS MakeFigure_ESS; do
     rootb -e ".L $ANA/$m.C+" > $BUILD/$m.build.log 2>&1 || { log "build of $m failed, see $BUILD/$m.build.log"; exit 1; }
@@ -76,13 +82,18 @@ done
 for day in $DAYS; do make_chunks $day; done
 
 # ---- pass 1: normalization constants ----
-pass V2Const 0
+pass V2Const "0,\"z-auau_run_*.root\",$BMIN,$BMAX"
 hadd -f $OUT/v2const.root $OUT/*/chunks/c*/cen5.V2Const_job0.root > $OUT/hadd_v2const.log 2>&1
 rootb -e "TFile f(\"$OUT/v2const.root\"); TProfile* p=(TProfile*)f.Get(\"pV2sq\"); \
           printf(\"v2{2} = %.5f  v2pair{2} = %.5f  v2B{2} = %.5f\n\", sqrt(p->GetBinContent(1)), sqrt(p->GetBinContent(2)), sqrt(p->GetBinContent(3)));" \
     | tee $OUT/v2const.txt
+# constants changed (e.g. new days added) -> every chunk must be redone with them, not only the new ones
+if ! cmp -s $OUT/v2const.txt $OUT/v2const.used; then
+    rm -f $OUT/*/chunks/c*/.done.ESS
+    cp $OUT/v2const.txt $OUT/v2const.used
+fi
 
 # ---- pass 2: event-shape selection ----
-pass ESS "0,\"z-auau_run_*.root\",\"$OUT/v2const.root\""
-rootb "$ANA/MakeFigure_ESS.C+(\"$OUT\",\"$DAYS\")" > $OUT/MakeFigure_ESS.log 2>&1
-log "done: $OUT/ESS_summary.txt, $OUT/ESS_fig6.png, $OUT/ESS_fig5_9.png"
+pass ESS "0,\"z-auau_run_*.root\",\"$OUT/v2const.root\",$BMIN,$BMAX"
+rootb "$ANA/MakeFigure_ESS.C+(\"$OUT\",\"$DAYS\",\"$CENT\")" > $OUT/MakeFigure_ESS.log 2>&1
+log "done: $OUT/ESS_summary.txt, $OUT/ESS_fig6.png, $OUT/ESS_fig6_g132.png, $OUT/ESS_fig5_9.png"

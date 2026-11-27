@@ -1,18 +1,22 @@
-// V2Const.C -- pass 1 of the ESS analysis: the ensemble two-particle cumulants that normalize the event-shape
-// variables of arXiv:2307.14997, Eqs. (8)-(11), measured on the same events as ESS.C:
+// V2Const.C -- pass 1 of the ESS analysis: the normalization constants of the event-shape variables of
+// arXiv:2307.14997, Eqs. (8)-(11), measured on the same events as ESS.C. As in the paper they are the ensemble
+// elliptic flow from two-particle correlations (no reaction plane), the quantity that makes <q2^2> ~ 1 (Eqs. 7, 8):
 //
 //   v2{2}^2 = Sum_ev (|Q|^2 - M) / Sum_ev M(M-1),   Q = Sum_j e^{2i phi_j}
 //
 // for three samples: bin 1 = single POI (M = N), bin 2 = POI pairs (phi_p of p_a+p_b, M = Npair),
 // bin 3 = q2,B particles (M = N_B). Filled as a weighted TProfile, so hadd over chunks gives the global value.
+// The reaction plane enters only the observables of ESS.C (v2, gamma).
 //
-// Usage (inside a chunk directory): root -l -b -q 'V2Const.C+(0)'  ->  cen5.V2Const_job0.root
+// Usage (inside a chunk directory): root -l -b -q 'V2Const.C+(0,"z-auau_run_*.root",8.4,9.2)'  ->  cen5.V2Const_job0.root
+// (bmin, bmax = impact-parameter window of the sample in fm)
 #include <cstdio>
 #include "TFile.h"
 #include "TProfile.h"
 #include "ESS_common.h"
 
-void V2Const(int job = 0, const char* filepat = "z-auau_run_*.root"){
+void V2Const(int job = 0, const char* filepat = "z-auau_run_*.root", double bmin = 8.4, double bmax = 9.2){
+    ess::bMin = bmin; ess::bMax = bmax;
     TChain* ch = ess::MakeChain(filepat);
     TFile fout(Form("cen5.V2Const_job%d.root", job), "RECREATE");
     TProfile* pV2sq = new TProfile("pV2sq", "v_{2}{2}^{2}: 1 single, 2 pair, 3 q_{2,B} particles", 3, 0.5, 3.5);
