@@ -96,4 +96,4 @@ fi
 # ---- pass 2: event-shape selection ----
 pass ESS "0,\"z-auau_run_*.root\",\"$OUT/v2const.root\",$BMIN,$BMAX"
 rootb "$ANA/MakeFigure_ESS.C+(\"$OUT\",\"$DAYS\",\"$CENT\")" > $OUT/MakeFigure_ESS.log 2>&1
-log "done: $OUT/ESS_summary.txt, $OUT/ESS_fig6.png, $OUT/ESS_fig5_9.png"
+log "done: $OUT/ESS_summary.txt, $OUT/ESS_fig6.png, $OUT/ESS_fig6_g132.png, $OUT/ESS_fig5_9.png"
